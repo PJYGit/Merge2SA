@@ -8,6 +8,7 @@
 #define MAX 32768
 #define MIN(a,b) (a < b ? a : b)
 
+// function used to read arrays from files
 void file_to_array(int* init_array, int file)
 {
 	FILE* input;
@@ -30,6 +31,7 @@ void file_to_array(int* init_array, int file)
 	printf("File reading finished...\n");
 }
 
+// function used to write the arrays to files
 void array_to_file(int* array)
 {
 	FILE* out = fopen("result.txt", "w");
@@ -42,6 +44,7 @@ void array_to_file(int* array)
 	fclose(out);
 }
 
+// binary search method to find a target in one array
 int binary_search(int* array, int target, int size)
 {
 	int left = 0;
@@ -72,6 +75,7 @@ int binary_search(int* array, int target, int size)
 	return mid;
 }
 
+// function to init all the parameters for MPI_scatterv()
 void init_p4s(int total_size, int* A, int* B, int num_procs,
 	int* a_part_size, int* a_indices, int* b_part_size, int* b_indices)
 {
@@ -119,6 +123,7 @@ void init_p4s(int total_size, int* A, int* B, int num_procs,
 	printf("Initializing finished...\n");
 }
 
+// function used to merge two sorted arrays
 void merge(int* a, int* b, int* merged, int size_a, int size_b) {
 	int merged_index = 0, i = 0, j = 0;
 
@@ -163,6 +168,7 @@ int main(int argc, char** argv) {
 	int num_procs;
 	int rank;
 
+	// MPI init
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
@@ -177,6 +183,7 @@ int main(int argc, char** argv) {
 	int* b_indies = malloc(sizeof(int) * num_procs);
 	int* b_part_length = malloc(sizeof(int) * num_procs);
 
+	// processor 0: read the arrays and init the parameters
 	if (rank == 0)
 	{
 		A = malloc(sizeof(int) * MAX);
@@ -186,7 +193,7 @@ int main(int argc, char** argv) {
 
 		init_p4s(MAX, A, B, num_procs, a_part_length, a_indies, b_part_length, b_indies);
 	}
-
+	// broadcast all the parameters
 	MPI_Bcast(a_indies, num_procs, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(a_part_length, num_procs, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(b_indies, num_procs, MPI_INT, 0, MPI_COMM_WORLD);
@@ -201,14 +208,16 @@ int main(int argc, char** argv) {
 	int* b = malloc(sizeof(int) * b_size);
 	int* merged = malloc(sizeof(int) * merged_size);
 
+	// scatter the divided sub-arrays to processors
 	MPI_Scatterv(A, a_part_length, a_indies, MPI_INT, a, a_size, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Scatterv(B, b_part_length, b_indies, MPI_INT, b, b_size, MPI_INT, 0, MPI_COMM_WORLD);
-
+	// merge the sub-arrays
 	merge(a, b, merged, a_size, b_size);
 
 	int* result;
 	int* result_indies;
 	int* result_part_size;
+	// processor 0 gather all the merged sub-arrays
 	if (rank == 0)
 	{
 		result = malloc(sizeof(int) * (MAX * 2));
@@ -224,6 +233,7 @@ int main(int argc, char** argv) {
 
 	MPI_Gatherv(merged, merged_size, MPI_INT, result, result_part_size, result_indies, MPI_INT, 0, MPI_COMM_WORLD);
 
+	// processor 0: write the final array to file "result.txt"
 	if (rank == 0)
 	{
 		/*
@@ -239,9 +249,11 @@ int main(int argc, char** argv) {
 		*/
 		array_to_file(result);
 
+		// free all the memories for processor 0
 		free(A); free(B); free(result);
 		free(result_indies); free(result_part_size);
 	}
+	// free all the memories
 	free(a_indies);
 	free(a_part_length);
 	free(b_indies);

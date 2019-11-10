@@ -52,31 +52,32 @@ void mergesort(int a[], int low, int high) {
 
 int main(int argc, char** argv) {
 	int n = MAX;
-	int original_array[MAX];
+	int original_array1[MAX];
+	int original_array2[MAX];
 
 	int c;
 	srand(time(NULL));
-	// printf("This is the unsorted array: \n");
 	for (c = 0; c < n; c++) {
 
-		original_array[c] = rand() % n;
-		// printf("%d ", original_array[c]);
+		original_array1[c] = rand() % n;
+		original_array2[c] = rand() % n;
 	}
 
-	mergesort(original_array, 0, n - 1);
+	mergesort(original_array1, 0, n - 1);
+	mergesort(original_array2, 0, n - 1);
 
-	// printf("\n\n\n\n");
-
-	FILE* out = fopen("sa1.txt", "w");
+	FILE* out1 = fopen("sa1.txt", "w");
+	FILE* out2 = fopen("sa2.txt", "w");
 
 	int i = 0;
 	for (i = 0; i < n; i++) {
-		// printf("%d ", original_array[i]);
-		fprintf(out, "%d ", original_array[i]);
+		fprintf(out1, "%d ", original_array1[i]);
+		fprintf(out2, "%d ", original_array2[i]);
 	}
 	
-	fclose(out);
+	fclose(out1);
+	fclose(out2);
 
-	printf("Done!\n");
+	printf("Generation Done!\n");
 }
 
